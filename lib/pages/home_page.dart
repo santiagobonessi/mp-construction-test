@@ -26,6 +26,7 @@ class _HomePageState extends State<HomePage> {
         child: ButtonWidget(
           onPressed: () => Navigator.pushNamed(context, NewDiaryPage.routeName),
           title: 'Add New Diary',
+          padding: const EdgeInsets.symmetric(horizontal: 20),
         ),
       ),
     );

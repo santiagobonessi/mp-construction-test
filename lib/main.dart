@@ -16,6 +16,7 @@ class MyApp extends StatelessWidget {
       title: 'Martin Pulgar App',
       theme: ThemeData(
         primarySwatch: Colors.green,
+        scaffoldBackgroundColor: const Color(0xEDFFFFFF),
       ),
       home: const HomePage(title: 'Martin Pulgar Construction'),
       routes: {
