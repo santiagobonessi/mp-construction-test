@@ -22,6 +22,7 @@ class NewDiaryPage extends StatefulWidget {
 }
 
 class _NewDiaryPageState extends State<NewDiaryPage> {
+  bool _isLoading = false;
   final diaryForm = GlobalKey<FormState>();
   Diary? diary;
   List<XFile>? _imageFileList;
@@ -132,9 +133,12 @@ class _NewDiaryPageState extends State<NewDiaryPage> {
     });
   }
 
-  void _createDiary() async {
-    // CHECK VALIDATIONS AND CREATE A NEW DIARY
+  Future<void> _createDiary(Diaries diariesData) async {
+    // Check validations and create new diary
     if (diaryForm.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
       final newDiary = Diary(
         photos: _imageFileList,
         comments: comments.text,
@@ -143,11 +147,16 @@ class _NewDiaryPageState extends State<NewDiaryPage> {
         event: selectedEvent,
         isPhotoGalleryIncluded: isPhotoGalleryIncluded,
       );
-      final diariessData = Provider.of<Diaries>(context, listen: false);
       try {
-        await diariessData.createDiary(newDiary);
+        await diariesData.createDiary(newDiary);
+        showCreationDialog();
+        Navigator.of(context).pop();
       } catch (error) {
         showErrorDialog();
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -168,8 +177,20 @@ class _NewDiaryPageState extends State<NewDiaryPage> {
     );
   }
 
+  void showCreationDialog() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Diary has been added succesfully',
+        ),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final diariessData = Provider.of<Diaries>(context, listen: false);
     return Scaffold(
       appBar: AppBarWidget(
         title: 'New Diary',
@@ -178,123 +199,130 @@ class _NewDiaryPageState extends State<NewDiaryPage> {
           icon: const Icon(Icons.close),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Form(
-            key: diaryForm,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(6.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Text(
-                        'Add to site diary',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w500,
+      body: (_isLoading)
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Form(
+                  key: diaryForm,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Add to site diary',
+                              style: Theme.of(context).textTheme.subtitle1,
+                            ),
+                            const Icon(
+                              Icons.help,
+                              color: Colors.grey,
+                            ),
+                          ],
                         ),
                       ),
-                      Icon(
-                        Icons.help,
-                        color: Colors.grey,
+                      const SizedBox(height: 16.0),
+                      CardWidget(
+                        children: [
+                          Text(
+                            'Add Photos to site diary',
+                            style: Theme.of(context).textTheme.subtitle1,
+                          ),
+                          ..._buildDivider(),
+                          _previewImages(),
+                          const SizedBox(height: 8.0),
+                          ButtonWidget(
+                            onPressed: () => _pickImages(),
+                            title: 'Add a photo',
+                          ),
+                          const SizedBox(height: 8.0),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Include in photo gallery'),
+                              Checkbox(
+                                value: isPhotoGalleryIncluded,
+                                onChanged: (value) => setState(() {
+                                  isPhotoGalleryIncluded = value!;
+                                }),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16.0),
+                      CardWidget(
+                        children: [
+                          Text('Comments', style: Theme.of(context).textTheme.subtitle1),
+                          ..._buildDivider(),
+                          InputWidget(
+                            placeholder: 'Comments',
+                            controller: comments,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16.0),
+                      CardWidget(
+                        children: [
+                          Text('Details', style: Theme.of(context).textTheme.subtitle1),
+                          ..._buildDivider(),
+                          DropdownWidget(
+                            placeholder: 'Select Area',
+                            elements: areas,
+                            selectedValue: selectedArea,
+                            callback: _selectArea,
+                          ),
+                          DropdownWidget(
+                            placeholder: 'Task Category',
+                            elements: categories,
+                            selectedValue: selectedCategory,
+                            callback: _selectCategory,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16.0),
+                      CardWidget(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Link to existing event?', style: Theme.of(context).textTheme.subtitle2),
+                              Checkbox(
+                                value: isEventLinked,
+                                onChanged: (value) => setState(() {
+                                  isEventLinked = value!;
+                                }),
+                              ),
+                            ],
+                          ),
+                          ..._buildDivider(),
+                          DropdownWidget(
+                            placeholder: 'Select an Event',
+                            elements: events,
+                            selectedValue: selectedEvent,
+                            callback: _selectEvent,
+                            isDisabled: !isEventLinked,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16.0),
+                      ButtonWidget(
+                        title: 'Next',
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        onPressed: () => {
+                          _createDiary(diariessData),
+                        },
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16.0),
-                CardWidget(
-                  children: [
-                    const Text('Add Photos to site diary'),
-                    ..._buildDivider(),
-                    _previewImages(),
-                    const SizedBox(height: 8.0),
-                    ButtonWidget(
-                      onPressed: () => _pickImages(),
-                      title: 'Add a photo',
-                    ),
-                    const SizedBox(height: 8.0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Include in photo gallery'),
-                        Checkbox(
-                          value: isPhotoGalleryIncluded,
-                          onChanged: (value) => setState(() {
-                            isPhotoGalleryIncluded = value!;
-                          }),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16.0),
-                CardWidget(
-                  children: [
-                    Text('Comments', style: Theme.of(context).textTheme.subtitle1),
-                    ..._buildDivider(),
-                    InputWidget(
-                      placeholder: 'Comments',
-                      controller: comments,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16.0),
-                CardWidget(
-                  children: [
-                    Text('Details', style: Theme.of(context).textTheme.subtitle1),
-                    ..._buildDivider(),
-                    DropdownWidget(
-                      placeholder: 'Select Area',
-                      elements: areas,
-                      selectedValue: selectedArea,
-                      callback: _selectArea,
-                    ),
-                    DropdownWidget(
-                      placeholder: 'Task Category',
-                      elements: categories,
-                      selectedValue: selectedCategory,
-                      callback: _selectCategory,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16.0),
-                CardWidget(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Link to existing event?', style: Theme.of(context).textTheme.subtitle2),
-                        Checkbox(
-                          value: isEventLinked,
-                          onChanged: (value) => setState(() {
-                            isEventLinked = value!;
-                          }),
-                        ),
-                      ],
-                    ),
-                    DropdownWidget(
-                      placeholder: 'Select an Event',
-                      elements: events,
-                      selectedValue: selectedEvent,
-                      callback: _selectEvent,
-                      isDisabled: !isEventLinked,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16.0),
-                ButtonWidget(
-                  title: 'Next',
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  onPressed: _createDiary,
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }
