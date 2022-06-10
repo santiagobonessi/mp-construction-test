@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import './new_diary_page.dart';
+import '../widgets/app_bar.dart';
 import '../widgets/button.dart';
 
 class HomePage extends StatefulWidget {
@@ -18,10 +19,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        backgroundColor: Colors.black,
-      ),
+      appBar: const AppBarWidget(title: 'Martin Pulgar Construction'),
       body: Center(
         child: ButtonWidget(
           onPressed: () => Navigator.pushNamed(context, NewDiaryPage.routeName),
