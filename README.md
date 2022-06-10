@@ -7,3 +7,11 @@ MP Construction Diary Test
 > flutter pub get
 
 > flutter run
+
+## Libraries Installed
+
+- [provider](https://pub.dev/packages/provider)
+
+- [image_picker](https://pub.dev/packages/image_picker)
+
+- [http](https://pub.dev/packages/http)
